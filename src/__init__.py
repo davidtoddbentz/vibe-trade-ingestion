@@ -1,0 +1,2 @@
+"""Vibe Trade Ingestion Package."""
+
