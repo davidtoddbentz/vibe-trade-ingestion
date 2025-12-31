@@ -19,7 +19,7 @@ This service continuously fetches 1-minute OHLCV candles from Coinbase Advanced 
 ### Prerequisites
 
 - Python 3.10+
-- Coinbase CDP API key file (`cdp_api_key-*.json`)
+- Coinbase CDP API credentials (for `.env` file)
 
 ### Installation
 
@@ -30,33 +30,33 @@ uv sync
 
 ### Configuration
 
-Place your Coinbase CDP API key file in the project directory:
-- File pattern: `cdp_api_key-*.json`
-- Or set `COINBASE_CDP_KEY_FILE` environment variable
+#### Local Development
 
-The JSON file should contain:
-```json
-{
-  "name": "organizations/.../apiKeys/{key_id}",
-  "privateKey": "-----BEGIN EC PRIVATE KEY-----\n..."
-}
-```
-
-### Environment Variables
+Create a `.env` file in the project root:
 
 ```bash
-# Required: CDP API key file (or use cdp_api_key-*.json in current directory)
-COINBASE_CDP_KEY_FILE=/path/to/cdp_api_key.json  # Optional if file is in current dir
-
-# Optional: Use full API key name instead of just key ID
-COINBASE_USE_FULL_API_KEY_NAME=false  # Default: false (uses key ID)
+# Required: CDP API credentials
+COINBASE_CDP_KEY_NAME=organizations/.../apiKeys/{key_id}
+COINBASE_CDP_KEY_SECRET=-----BEGIN EC PRIVATE KEY-----\n...
 
 # Optional: Coinbase environment
-COINBASE_ENVIRONMENT=live  # Default: live (options: sandbox, live)
+COINBASE_ENVIRONMENT=sandbox  # Default: live (options: sandbox, live)
 
 # Optional: Symbols to fetch
 COINBASE_SYMBOLS=BTC-USD,ETH-USD  # Default: BTC-USD,ETH-USD
+
+# Optional: Use full API key name instead of just key ID
+COINBASE_USE_FULL_API_KEY_NAME=false  # Default: false (uses key ID)
 ```
+
+
+#### Cloud Run
+
+Environment variables are set via Terraform from:
+- `COINBASE_ENVIRONMENT`: From `terraform.tfvars` → `var.coinbase_environment`
+- `COINBASE_SYMBOLS`: From `terraform.tfvars` → `var.coinbase_symbols`
+- `COINBASE_CDP_KEY_NAME`: From Secret Manager
+- `COINBASE_CDP_KEY_SECRET`: From Secret Manager
 
 ## Usage
 
@@ -65,7 +65,7 @@ COINBASE_SYMBOLS=BTC-USD,ETH-USD  # Default: BTC-USD,ETH-USD
 make run
 
 # The service will:
-# 1. Load CDP API key from cdp_api_key-*.json
+# 1. Load configuration from .env file
 # 2. Start fetching 1-minute candles every minute at :05 seconds
 # 3. Log all fetched candles
 # 4. Stay running continuously (perfect for Cloud Run)

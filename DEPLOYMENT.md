@@ -17,8 +17,9 @@ Create two separate secrets for the CDP API credentials:
 
 ```bash
 # Extract the key name and private key from your JSON file
-KEY_NAME=$(cat cdp_api_key-5.json | jq -r '.name')
-PRIVATE_KEY=$(cat cdp_api_key-5.json | jq -r '.privateKey')
+# Get values from your .env file or Coinbase CDP API key
+KEY_NAME="organizations/.../apiKeys/{key_id}"
+PRIVATE_KEY="-----BEGIN EC PRIVATE KEY-----\n..."
 
 # Create secret for API key name
 echo -n "$KEY_NAME" | gcloud secrets create vibe-trade-coinbase-cdp-key-name \
@@ -107,13 +108,20 @@ gcloud run services logs read vibe-trade-ingestion \
 
 ### Environment Variables
 
-The service uses these environment variables (set via Terraform):
+The service uses these environment variables:
 
+**Cloud Run (set via Terraform):**
+- `COINBASE_ENVIRONMENT`: `sandbox` or `live` (from `terraform.tfvars` → `var.coinbase_environment`, default: `live`)
+- `COINBASE_SYMBOLS`: Comma-separated list of symbols (from `terraform.tfvars` → `var.coinbase_symbols`, default: `BTC-USD,ETH-USD`)
+- `COINBASE_CDP_KEY_NAME`: API key name from Secret Manager
+- `COINBASE_CDP_KEY_SECRET`: Private key from Secret Manager
+
+**Local Development:**
 - `COINBASE_ENVIRONMENT`: `sandbox` or `live` (default: `live`)
 - `COINBASE_SYMBOLS`: Comma-separated list of symbols (default: `BTC-USD,ETH-USD`)
-- `COINBASE_CDP_KEY_NAME`: API key name from Secret Manager (Cloud Run only)
-- `COINBASE_CDP_KEY_SECRET`: Private key from Secret Manager (Cloud Run only)
-- `COINBASE_CDP_KEY_FILE`: Path to JSON file (local dev only)
+- `COINBASE_CDP_KEY_NAME`: API key name (from `.env` file or environment variable)
+- `COINBASE_CDP_KEY_SECRET`: Private key (from `.env` file or environment variable)
+- `COINBASE_USE_FULL_API_KEY_NAME`: `true` or `false` (default: `false`, uses key ID only)
 
 ### Secret Manager
 

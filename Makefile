@@ -11,17 +11,10 @@ locally: install lint-fix format
 
 # Run the real-time ingestion service
 # Uses .env file (loaded by Python's load_dotenv in main.py)
-# Falls back to loading from cdp_api_key-*.json if .env doesn't have new format vars
-# Note: We don't source .env in bash because it may contain multiline values that break bash
+# Environment variables must be set in .env file or as shell environment variables
 run:
-	@bash -c ' \
-	CDP_FILE=$$(ls cdp_api_key-*.json 2>/dev/null | head -1); \
-	if [ -n "$$CDP_FILE" ] && [ -f "$$CDP_FILE" ]; then \
-		export COINBASE_CDP_KEY_NAME=$$(jq -r ".name" "$$CDP_FILE" 2>/dev/null); \
-		export COINBASE_CDP_KEY_SECRET=$$(jq -r ".privateKey" "$$CDP_FILE" 2>/dev/null); \
-	fi; \
-	echo "🚀 Starting real-time Coinbase SPOT ingestion service..."; \
-	uv run python -m src.main'
+	@echo "🚀 Starting real-time Coinbase SPOT ingestion service..."
+	@uv run python -m src.main
 
 test:
 	@if [ -d tests ] && [ -n "$$(find tests -name 'test_*.py' 2>/dev/null)" ]; then \

@@ -7,8 +7,10 @@ import logging
 import os
 import signal
 import sys
+import threading
 import time
 from datetime import datetime, timedelta, timezone
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -33,6 +35,41 @@ from src.sources.coinbase import CoinbaseExchangeAdapter  # noqa: E402
 
 # Global flag for graceful shutdown
 shutdown = False
+
+
+class HealthCheckHandler(BaseHTTPRequestHandler):
+    """Simple health check handler for Cloud Run."""
+
+    def do_GET(self):
+        """Handle GET requests for health checks."""
+        self.send_response(200)
+        self.send_header("Content-type", "text/plain")
+        self.end_headers()
+        self.wfile.write(b"OK")
+
+    def log_message(self, format, *args):
+        """Suppress HTTP server logs."""
+        pass
+
+
+def start_health_server(port: int = 8080):
+    """Start a simple HTTP server for Cloud Run health checks.
+
+    Args:
+        port: Port to listen on (default: 8080)
+    """
+
+    def run_server():
+        server = HTTPServer(("", port), HealthCheckHandler)
+        logger.info(f"🏥 Health check server listening on port {port}")
+        while not shutdown:
+            server.handle_request()
+        server.server_close()
+        logger.info("🏥 Health check server stopped")
+
+    thread = threading.Thread(target=run_server, daemon=True)
+    thread.start()
+    return thread
 
 
 def signal_handler(sig, frame):
@@ -120,6 +157,10 @@ def main():
         # Register signal handlers
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
+
+        # Start health check server for Cloud Run
+        port = int(os.getenv("PORT", "8080"))
+        start_health_server(port)
 
         logger.info("📡 Starting ingestion loop (runs at :05 seconds past each minute)...")
         logger.info("   Press Ctrl+C to stop\n")

@@ -61,8 +61,8 @@ class SystemConfig:
     def validate(self) -> None:
         """Validate configuration."""
         if not self.coinbase_api_key:
-            raise ValueError("COINBASE_API_KEY is required")
+            raise ValueError("coinbase_api_key is required (from COINBASE_CDP_KEY_NAME)")
         if not self.coinbase_api_secret:
-            raise ValueError("COINBASE_API_SECRET is required")
+            raise ValueError("coinbase_api_secret is required (from COINBASE_CDP_KEY_SECRET)")
         if self.coinbase_environment not in ["sandbox", "live"]:
             raise ValueError("COINBASE_ENVIRONMENT must be 'sandbox' or 'live'")
