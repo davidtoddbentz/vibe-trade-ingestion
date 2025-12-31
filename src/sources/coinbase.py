@@ -3,7 +3,6 @@
 import logging
 from datetime import datetime, timezone
 from decimal import Decimal
-from typing import List, Optional
 
 from coinbase.rest import RESTClient
 
@@ -22,7 +21,7 @@ class CoinbaseExchangeAdapter(ExchangeAdapter):
         api_key: str = "",
         api_secret: str = "",
         environment: str = "sandbox",
-        rest_client: Optional[RESTClient] = None,
+        rest_client: RESTClient | None = None,
     ):
         """Initialize Coinbase Advanced Trade adapter.
 
@@ -129,8 +128,8 @@ class CoinbaseExchangeAdapter(ExchangeAdapter):
         start_time: datetime,
         end_time: datetime,
         granularity: Granularity = Granularity.ONE_MINUTE,
-        limit: Optional[int] = None,
-    ) -> List[Candle]:
+        limit: int | None = None,
+    ) -> list[Candle]:
         """Get historical candle data for a symbol."""
         logger.info(f"Fetching candles for {symbol} from {start_time} to {end_time}")
         try:
@@ -150,7 +149,7 @@ class CoinbaseExchangeAdapter(ExchangeAdapter):
 
         except Exception as e:
             logger.error(f"Failed to get candles for {symbol}: {e}")
-            raise ExchangeError(f"Failed to get candles for {symbol}: {e}")
+            raise ExchangeError(f"Failed to get candles for {symbol}: {e}") from e
 
     def _fetch_candles_paginated(
         self,
@@ -158,7 +157,7 @@ class CoinbaseExchangeAdapter(ExchangeAdapter):
         start_time: datetime,
         end_time: datetime,
         coinbase_granularity: str,
-    ) -> List[Candle]:
+    ) -> list[Candle]:
         """Fetch candles with pagination."""
         from datetime import timedelta
 
@@ -169,9 +168,7 @@ class CoinbaseExchangeAdapter(ExchangeAdapter):
 
         while current_start < end_time:
             chunk_count += 1
-            chunk_end = min(
-                current_start + timedelta(minutes=max_candles_per_request), end_time
-            )
+            chunk_end = min(current_start + timedelta(minutes=max_candles_per_request), end_time)
 
             logger.debug(f"Chunk {chunk_count}: {current_start} to {chunk_end}")
             chunk_candles = self._fetch_candles_chunk(
@@ -193,7 +190,7 @@ class CoinbaseExchangeAdapter(ExchangeAdapter):
         chunk_start: datetime,
         chunk_end: datetime,
         coinbase_granularity: str,
-    ) -> List[Candle]:
+    ) -> list[Candle]:
         """Fetch a single chunk of candles."""
         try:
             response = self.rest_client.get_candles(
@@ -212,9 +209,9 @@ class CoinbaseExchangeAdapter(ExchangeAdapter):
 
         except Exception as e:
             logger.error(f"Failed to fetch candles for {normalized_symbol}: {e}")
-            raise ExchangeError(f"Failed to fetch candles: {e}")
+            raise ExchangeError(f"Failed to fetch candles: {e}") from e
 
-    def _parse_sdk_candles(self, candles_data) -> List[Candle]:
+    def _parse_sdk_candles(self, candles_data) -> list[Candle]:
         """Parse SDK candle data into Candle objects."""
         candles = []
         for candle_data in candles_data:
@@ -234,4 +231,3 @@ class CoinbaseExchangeAdapter(ExchangeAdapter):
                 )
             )
         return candles
-
