@@ -60,7 +60,7 @@ def get_next_run_time() -> datetime:
 
 
 def sleep_until(target_time: datetime):
-    """Sleep until the target time.
+    """Sleep until the target time, checking for shutdown signals periodically.
 
     Args:
         target_time: Target datetime to sleep until
@@ -69,8 +69,14 @@ def sleep_until(target_time: datetime):
     sleep_seconds = (target_time - now).total_seconds()
 
     if sleep_seconds > 0:
-        logger.debug(f"Sleeping {sleep_seconds:.2f} seconds until {target_time}")
-        time.sleep(sleep_seconds)
+        logger.info(
+            f"⏳ Waiting {sleep_seconds:.1f} seconds until {target_time} (next fetch at :05)"
+        )
+        # Sleep in 1-second chunks to allow quick shutdown
+        while sleep_seconds > 0 and not shutdown:
+            chunk = min(1.0, sleep_seconds)
+            time.sleep(chunk)
+            sleep_seconds = (target_time - datetime.now(timezone.utc)).total_seconds()
     elif sleep_seconds < 0:
         logger.warning(f"Target time {target_time} is in the past, running immediately")
 

@@ -157,4 +157,3 @@ def create_mock_candles_response(candles: list[tuple]) -> MockCandlesResponse:
         for ts, open_price, high, low, close, volume in candles
     ]
     return MockCandlesResponse(candle_data)
-

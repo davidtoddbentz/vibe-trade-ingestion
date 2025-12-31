@@ -437,4 +437,3 @@ class TestIngestionE2E:
         assert result is not None
         # Should only call once for 2-minute range
         assert mock_rest_client.get_candles.call_count == 1
-
