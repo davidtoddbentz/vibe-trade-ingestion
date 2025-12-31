@@ -3,7 +3,6 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
 
 from ..models.candle import Candle
 
@@ -69,7 +68,7 @@ def parse_symbol_string(symbol_str: str) -> Symbol:
         }
         if symbol_str in symbol_map:
             return symbol_map[symbol_str]
-        raise ValueError(f"Unsupported symbol: {symbol_str}")
+        raise ValueError(f"Unsupported symbol: {symbol_str}") from None
 
 
 class Granularity(str, Enum):
@@ -98,8 +97,8 @@ class ExchangeAdapter(ABC):
         start_time: datetime,
         end_time: datetime,
         granularity: Granularity = Granularity.ONE_MINUTE,
-        limit: Optional[int] = None,
-    ) -> List[Candle]:
+        limit: int | None = None,
+    ) -> list[Candle]:
         """Get historical candle data for a symbol.
 
         Args:
@@ -117,4 +116,3 @@ class ExchangeAdapter(ABC):
             ExchangeError: If unable to fetch candle data
         """
         pass
-
