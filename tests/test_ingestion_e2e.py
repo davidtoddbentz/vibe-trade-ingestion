@@ -29,25 +29,17 @@ class TestIngestionE2E:
         mock_rest_client = MagicMock()
         mock_rest_client_class.return_value = mock_rest_client
 
-        # Create mock candle response
-        base_time = datetime(2025, 1, 1, 12, 3, 0, tzinfo=timezone.utc)
-        candle1 = create_mock_candle_response(
+        # Create mock candle response (only the completed candle we fetch)
+        base_time = datetime(2025, 1, 1, 12, 4, 0, tzinfo=timezone.utc)
+        candle = create_mock_candle_response(
             timestamp=base_time,
-            open_price=50000.0,
-            high=50100.0,
-            low=49900.0,
-            close=50050.0,
-            volume=1.5,
-        )
-        candle2 = create_mock_candle_response(
-            timestamp=base_time.replace(minute=4),
             open_price=50050.0,
             high=50200.0,
             low=50000.0,
             close=50100.0,
             volume=2.0,
         )
-        mock_rest_client.get_candles.return_value = MockCandlesResponse([candle1, candle2])
+        mock_rest_client.get_candles.return_value = MockCandlesResponse([candle])
 
         # Create real adapter and ingestor
         adapter = CoinbaseExchangeAdapter(
@@ -63,7 +55,7 @@ class TestIngestionE2E:
         # Verify result
         assert result is not None
         assert isinstance(result, Candle)
-        assert result.timestamp == base_time.replace(minute=4)  # Most recent
+        assert result.timestamp == base_time  # The completed candle
         assert result.open == 50050.0
         assert result.high == 50200.0
         assert result.low == 50000.0
@@ -75,9 +67,9 @@ class TestIngestionE2E:
         call_kwargs = mock_rest_client.get_candles.call_args[1]
         assert call_kwargs["product_id"] == "BTC-USD"
         assert call_kwargs["granularity"] == "ONE_MINUTE"
-        # Verify time range (2 minutes before current minute start)
+        # Verify time range (1 minute before current minute start - the completed candle)
         expected_end = datetime(2025, 1, 1, 12, 5, 0, tzinfo=timezone.utc)
-        expected_start = expected_end - timedelta(minutes=2)
+        expected_start = expected_end - timedelta(minutes=1)
         assert call_kwargs["start"] == int(expected_start.timestamp())
         assert call_kwargs["end"] == int(expected_end.timestamp())
 
@@ -377,8 +369,8 @@ class TestIngestionE2E:
             # End should be start of current minute
             assert end_dt == expected_end
 
-            # Start should be 2 minutes before end
-            expected_start = expected_end - timedelta(minutes=2)
+            # Start should be 1 minute before end (the completed candle)
+            expected_start = expected_end - timedelta(minutes=1)
             assert start_dt == expected_start
 
             mock_rest_client.reset_mock()
@@ -437,4 +429,3 @@ class TestIngestionE2E:
         assert result is not None
         # Should only call once for 2-minute range
         assert mock_rest_client.get_candles.call_count == 1
-

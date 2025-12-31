@@ -7,8 +7,10 @@ import logging
 import os
 import signal
 import sys
+import threading
 import time
 from datetime import datetime, timedelta, timezone
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -33,6 +35,41 @@ from src.sources.coinbase import CoinbaseExchangeAdapter  # noqa: E402
 
 # Global flag for graceful shutdown
 shutdown = False
+
+
+class HealthCheckHandler(BaseHTTPRequestHandler):
+    """Simple health check handler for Cloud Run."""
+
+    def do_GET(self):
+        """Handle GET requests for health checks."""
+        self.send_response(200)
+        self.send_header("Content-type", "text/plain")
+        self.end_headers()
+        self.wfile.write(b"OK")
+
+    def log_message(self, format, *args):
+        """Suppress HTTP server logs."""
+        pass
+
+
+def start_health_server(port: int = 8080):
+    """Start a simple HTTP server for Cloud Run health checks.
+
+    Args:
+        port: Port to listen on (default: 8080)
+    """
+
+    def run_server():
+        server = HTTPServer(("", port), HealthCheckHandler)
+        logger.info(f"🏥 Health check server listening on port {port}")
+        while not shutdown:
+            server.handle_request()
+        server.server_close()
+        logger.info("🏥 Health check server stopped")
+
+    thread = threading.Thread(target=run_server, daemon=True)
+    thread.start()
+    return thread
 
 
 def signal_handler(sig, frame):
@@ -60,7 +97,7 @@ def get_next_run_time() -> datetime:
 
 
 def sleep_until(target_time: datetime):
-    """Sleep until the target time.
+    """Sleep until the target time, checking for shutdown signals periodically.
 
     Args:
         target_time: Target datetime to sleep until
@@ -69,8 +106,14 @@ def sleep_until(target_time: datetime):
     sleep_seconds = (target_time - now).total_seconds()
 
     if sleep_seconds > 0:
-        logger.debug(f"Sleeping {sleep_seconds:.2f} seconds until {target_time}")
-        time.sleep(sleep_seconds)
+        logger.info(
+            f"⏳ Waiting {sleep_seconds:.1f} seconds until {target_time} (next fetch at :05)"
+        )
+        # Sleep in 1-second chunks to allow quick shutdown
+        while sleep_seconds > 0 and not shutdown:
+            chunk = min(1.0, sleep_seconds)
+            time.sleep(chunk)
+            sleep_seconds = (target_time - datetime.now(timezone.utc)).total_seconds()
     elif sleep_seconds < 0:
         logger.warning(f"Target time {target_time} is in the past, running immediately")
 
@@ -114,6 +157,10 @@ def main():
         # Register signal handlers
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
+
+        # Start health check server for Cloud Run
+        port = int(os.getenv("PORT", "8080"))
+        start_health_server(port)
 
         logger.info("📡 Starting ingestion loop (runs at :05 seconds past each minute)...")
         logger.info("   Press Ctrl+C to stop\n")

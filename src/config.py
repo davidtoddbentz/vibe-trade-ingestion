@@ -1,14 +1,12 @@
 """Configuration management."""
 
-import json
 import os
 from dataclasses import dataclass
-from pathlib import Path
 
 
 @dataclass
 class SystemConfig:
-    """System configuration from environment variables or CDP API key file."""
+    """System configuration from environment variables."""
 
     coinbase_api_key: str
     coinbase_api_secret: str
@@ -16,60 +14,25 @@ class SystemConfig:
 
     @classmethod
     def from_env(cls) -> "SystemConfig":
-        """Load configuration from CDP API key file.
+        """Load configuration from CDP API credentials via environment variables.
 
-        Requires a CDP API key JSON file. Fails immediately if not found or invalid.
+        Requires:
+        - COINBASE_CDP_KEY_NAME: API key name
+        - COINBASE_CDP_KEY_SECRET: Private key
         """
-        # Try to load from CDP API key file
-        cdp_key_file = os.getenv("COINBASE_CDP_KEY_FILE", "")
-
-        # If not specified, look for cdp_api_key-*.json files in current directory
-        if not cdp_key_file:
-            current_dir = Path.cwd()
-            cdp_files = list(current_dir.glob("cdp_api_key-*.json"))
-            if not cdp_files:
-                raise ValueError(
-                    f"CDP API key file not found.\n"
-                    f"  - Looked for: cdp_api_key-*.json in {current_dir}\n"
-                    f"  - Set COINBASE_CDP_KEY_FILE to specify the path to your CDP key file"
-                )
-            # Use the most recent one found
-            cdp_key_file = str(sorted(cdp_files, key=lambda p: p.stat().st_mtime, reverse=True)[0])
-
-        # Verify file exists
-        if not Path(cdp_key_file).exists():
-            raise ValueError(
-                f"CDP API key file not found: {cdp_key_file}\n"
-                f"  - Verify the file path is correct\n"
-                f"  - Or set COINBASE_CDP_KEY_FILE to the correct path"
-            )
-
-        # Load and parse the JSON file
-        try:
-            with open(cdp_key_file) as f:
-                cdp_data = json.load(f)
-        except json.JSONDecodeError as e:
-            raise ValueError(
-                f"Invalid JSON in CDP API key file {cdp_key_file}: {e}\n"
-                f"  - Please verify the file is valid JSON"
-            ) from e
-        except Exception as e:
-            raise ValueError(f"Failed to read CDP API key file {cdp_key_file}: {e}") from e
-
-        # Extract API key name and private key from CDP format
-        api_key_name = cdp_data.get("name", "")
-        api_secret = cdp_data.get("privateKey", "")
+        api_key_name = os.getenv("COINBASE_CDP_KEY_NAME", "")
+        api_secret = os.getenv("COINBASE_CDP_KEY_SECRET", "")
 
         if not api_key_name:
             raise ValueError(
-                f"Missing 'name' field in CDP API key file {cdp_key_file}\n"
-                f"  - The file must contain a 'name' field with the API key name"
+                "COINBASE_CDP_KEY_NAME environment variable is required\n"
+                "  - Set it to your Coinbase CDP API key name"
             )
 
         if not api_secret:
             raise ValueError(
-                f"Missing 'privateKey' field in CDP API key file {cdp_key_file}\n"
-                f"  - The file must contain a 'privateKey' field with the EC private key"
+                "COINBASE_CDP_KEY_SECRET environment variable is required\n"
+                "  - Set it to your Coinbase CDP private key"
             )
 
         # For CDP, we can use either the full name or just the key ID
@@ -98,8 +61,8 @@ class SystemConfig:
     def validate(self) -> None:
         """Validate configuration."""
         if not self.coinbase_api_key:
-            raise ValueError("COINBASE_API_KEY is required")
+            raise ValueError("coinbase_api_key is required (from COINBASE_CDP_KEY_NAME)")
         if not self.coinbase_api_secret:
-            raise ValueError("COINBASE_API_SECRET is required")
+            raise ValueError("coinbase_api_secret is required (from COINBASE_CDP_KEY_SECRET)")
         if self.coinbase_environment not in ["sandbox", "live"]:
             raise ValueError("COINBASE_ENVIRONMENT must be 'sandbox' or 'live'")
