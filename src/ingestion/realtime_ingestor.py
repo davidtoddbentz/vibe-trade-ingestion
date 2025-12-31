@@ -32,14 +32,14 @@ class RealtimeIngestor:
         try:
             symbol = parse_symbol_string(symbol_string)
 
-            # Get current time and calculate the previous minute
+            # Get current time and calculate the previous completed minute
             now = datetime.now(timezone.utc)
             # Round down to the start of the current minute
             current_minute_start = now.replace(second=0, microsecond=0)
-            # Previous minute is 2 minutes ago to 1 minute ago
-            # This ensures we get the completed candle
+            # Previous completed minute is 1 minute ago
+            # Fetch from 1 minute ago to current minute start to get the completed candle
             end_time = current_minute_start
-            start_time = end_time - timedelta(minutes=2)
+            start_time = end_time - timedelta(minutes=1)
 
             logger.debug(f"Fetching candles for {symbol_string} from {start_time} to {end_time}")
 
