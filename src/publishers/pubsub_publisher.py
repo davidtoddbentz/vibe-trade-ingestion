@@ -113,4 +113,3 @@ class PubSubPublisher:
             else:
                 results[symbol] = None
         return results
-

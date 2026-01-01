@@ -1,2 +1,1 @@
 """Publishers for candle data."""
-
