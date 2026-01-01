@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 # Imports after logging setup (required for proper logging configuration)
 from src.config import SystemConfig  # noqa: E402
 from src.ingestion.realtime_ingestor import RealtimeIngestor  # noqa: E402
+from src.publishers.pubsub_publisher import PubSubPublisher  # noqa: E402
 from src.sources.coinbase import CoinbaseExchangeAdapter  # noqa: E402
 
 # Global flag for graceful shutdown
@@ -154,6 +155,18 @@ def main():
         ingestor = RealtimeIngestor(exchange_adapter)
         logger.info("✅ Real-time ingestor initialized")
 
+        # Initialize Pub/Sub publisher
+        project_id = os.getenv("GOOGLE_CLOUD_PROJECT", "")
+        if not project_id:
+            logger.warning(
+                "GOOGLE_CLOUD_PROJECT not set - Pub/Sub publishing will be disabled. "
+                "Set GOOGLE_CLOUD_PROJECT environment variable to enable."
+            )
+            pubsub_publisher = None
+        else:
+            pubsub_publisher = PubSubPublisher(project_id)
+            logger.info(f"✅ Pub/Sub publisher initialized (project: {project_id})")
+
         # Register signal handlers
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
@@ -187,15 +200,20 @@ def main():
                 failed = len(results) - successful
                 logger.info(f"✅ Fetched {successful} candles, {failed} failed")
 
-                # TODO: Publish to Pub/Sub here (later)
-                for symbol, candle in results.items():
-                    if candle:
-                        # For now, just log - Pub/Sub will be added later
-                        logger.debug(
-                            f"  {symbol}: {candle.timestamp} "
-                            f"O:{candle.open} H:{candle.high} "
-                            f"L:{candle.low} C:{candle.close} V:{candle.volume}"
-                        )
+                # Publish to Pub/Sub
+                if pubsub_publisher:
+                    publish_results = pubsub_publisher.publish_candles(results)
+                    published = sum(1 for msg_id in publish_results.values() if msg_id is not None)
+                    logger.info(f"📤 Published {published} candles to Pub/Sub")
+                else:
+                    # Log candles when Pub/Sub is not available
+                    for symbol, candle in results.items():
+                        if candle:
+                            logger.debug(
+                                f"  {symbol}: {candle.timestamp} "
+                                f"O:{candle.open} H:{candle.high} "
+                                f"L:{candle.low} C:{candle.close} V:{candle.volume}"
+                            )
 
             except KeyboardInterrupt:
                 logger.info("Interrupted by user")
