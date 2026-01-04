@@ -29,16 +29,12 @@ classifiers = [
 ]
 
 # Artifact Registry index configuration for vibe-trade-shared
-# uv uses keyring authentication via keyrings.google-artifactregistry-auth
-# Ensure you have: pip install keyrings.google-artifactregistry-auth
-# And: gcloud auth application-default login
-[tool.uv]
-keyring-provider = "subprocess"
-
-[[tool.uv.index]]
-name = "gcp-artifact-registry"
-url = "https://us-central1-python.pkg.dev/vibe-trade-475704/vibe-trade-python/simple/"
-explicit = true
+# Note: vibe-trade-shared is installed separately via make install
+# All commands use `uv run --no-sync` to avoid dependency resolution
+# [[tool.uv.index]]
+# name = "gcp-artifact-registry"
+# url = "https://us-central1-python.pkg.dev/vibe-trade-475704/vibe-trade-python/simple/"
+# explicit = true
 
 [build-system]
 requires = ["setuptools>=61.0"]
