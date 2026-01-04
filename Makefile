@@ -37,30 +37,32 @@ run:
 	@if [ ! -d ".venv" ]; then \
 		echo "❌ Virtual environment not found. Run 'make install' first."; \
 		exit 1; \
-	fi; \
+	fi
 	@echo "🚀 Starting real-time ingestion service..."
 	@.venv/bin/python -m src.main
 
 test:
-	@bash -c '\
+	@bash -c ' \
 	if [ ! -d "tests" ] || [ -z "$$(find tests -name \"test_*.py\" 2>/dev/null | head -1)" ]; then \
 		echo "⚠️  No tests found. Skipping."; \
 		exit 0; \
 	fi; \
 	if [ ! -d ".venv" ]; then \
-		echo "❌ Virtual environment not found. Run 'make install' first."; \
+		echo "❌ Virtual environment not found. Run make install first."; \
 		exit 1; \
 	fi; \
 	echo "🧪 Running tests..."; \
-	.venv/bin/python -m pytest tests/ -v'
+	.venv/bin/python -m pytest tests/ -v \
+	'
 
 test-cov:
-	@bash -c '\
+	@bash -c ' \
 	if [ ! -d ".venv" ]; then \
-		echo "❌ Virtual environment not found. Run 'make install' first."; \
+		echo "❌ Virtual environment not found. Run make install first."; \
 		exit 1; \
 	fi; \
-	.venv/bin/python -m pytest tests/ --cov=src --cov-report=term-missing --cov-report=html --cov-fail-under=60'
+	.venv/bin/python -m pytest tests/ --cov=src --cov-report=term-missing --cov-report=html --cov-fail-under=60 \
+	'
 
 lint:
 	@if [ ! -d ".venv" ]; then \
