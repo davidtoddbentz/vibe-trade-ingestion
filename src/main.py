@@ -31,8 +31,10 @@ logger = logging.getLogger(__name__)
 # Imports after logging setup (required for proper logging configuration)
 from src.config import SystemConfig  # noqa: E402
 from src.ingestion.realtime_ingestor import RealtimeIngestor  # noqa: E402
+from src.ingestion.twitter_ingestor import TwitterIngestor  # noqa: E402
 from src.publishers.pubsub_publisher import PubSubPublisher  # noqa: E402
 from src.sources.coinbase import CoinbaseExchangeAdapter  # noqa: E402
+from src.sources.twitter import TwitterAPIAdapter  # noqa: E402
 
 # Global flag for graceful shutdown
 shutdown = False
@@ -121,7 +123,7 @@ def sleep_until(target_time: datetime):
 
 def main():
     """Main entry point for real-time ingestion."""
-    logger.info("🚀 Starting Coinbase SPOT ingestion service...")
+    logger.info("🚀 Starting ingestion service...")
 
     try:
         # Load configuration
@@ -166,6 +168,30 @@ def main():
         else:
             pubsub_publisher = PubSubPublisher(project_id)
             logger.info(f"✅ Pub/Sub publisher initialized (project: {project_id})")
+
+        # Twitter ingestion setup
+        twitter_api_key = os.getenv("TWITTER_API_KEY", "")
+        twitter_ingestor = None
+
+        if twitter_api_key:
+            if not project_id:
+                logger.warning("GOOGLE_CLOUD_PROJECT not set - Twitter ingestion disabled")
+            else:
+                try:
+                    from vibe_trade_shared.db.firestore_client import FirestoreClient
+                    from vibe_trade_shared.db.twitter_user_repository import TwitterUserRepository
+
+                    firestore_client = FirestoreClient.get_client(project=project_id, database=None)
+                    user_repository = TwitterUserRepository(firestore_client)
+
+                    twitter_adapter = TwitterAPIAdapter(api_key=twitter_api_key)
+                    twitter_ingestor = TwitterIngestor(twitter_adapter, user_repository)
+                    logger.info("✅ Twitter ingestor initialized")
+                except Exception as e:
+                    logger.error(f"Failed to initialize Twitter ingestion: {e}", exc_info=True)
+                    twitter_ingestor = None
+        else:
+            logger.info("TWITTER_API_KEY not set - Twitter ingestion disabled")
 
         # Register signal handlers
         signal.signal(signal.SIGINT, signal_handler)
@@ -214,6 +240,24 @@ def main():
                                 f"O:{candle.open} H:{candle.high} "
                                 f"L:{candle.low} C:{candle.close} V:{candle.volume}"
                             )
+
+                # Fetch Twitter tweets
+                if twitter_ingestor:
+                    try:
+                        logger.info("🐦 Fetching Twitter tweets...")
+                        tweets_by_user = twitter_ingestor.fetch_all_users()
+                        total_tweets = sum(len(tweets) for tweets in tweets_by_user.values())
+                        logger.info(
+                            f"✅ Fetched {total_tweets} tweets from {len(tweets_by_user)} users"
+                        )
+
+                        # Publish to Pub/Sub
+                        if pubsub_publisher:
+                            publish_results = pubsub_publisher.publish_tweets(tweets_by_user)
+                            total_published = sum(publish_results.values())
+                            logger.info(f"📤 Published {total_published} tweets to Pub/Sub")
+                    except Exception as e:
+                        logger.error(f"Error in Twitter ingestion: {e}", exc_info=True)
 
             except KeyboardInterrupt:
                 logger.info("Interrupted by user")

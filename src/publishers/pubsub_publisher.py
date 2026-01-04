@@ -7,6 +7,7 @@ from google.cloud import pubsub_v1
 from google.cloud.pubsub_v1 import types
 
 from ..models.candle import Candle
+from ..models.tweet import Tweet
 
 logger = logging.getLogger(__name__)
 
@@ -112,4 +113,103 @@ class PubSubPublisher:
                 results[symbol] = message_id
             else:
                 results[symbol] = None
+        return results
+
+    def _get_tweet_topic_name(self, username: str) -> str:
+        """Get Pub/Sub topic name for a user's tweets.
+
+        Args:
+            username: Twitter username (e.g., "elonmusk")
+
+        Returns:
+            Topic name (e.g., "vibe-trade-tweets-elonmusk")
+        """
+        normalized_username = username.lower().lstrip("@")
+        return f"vibe-trade-tweets-{normalized_username}"
+
+    def _tweet_to_message(self, tweet: Tweet) -> dict:
+        """Convert tweet to Pub/Sub message format.
+
+        Args:
+            tweet: Tweet data
+
+        Returns:
+            Message dictionary
+        """
+        return {
+            "tweet_id": tweet.tweet_id,
+            "user_id": tweet.user_id,
+            "username": tweet.username,
+            "text": tweet.text,
+            "timestamp": tweet.timestamp.isoformat(),
+            "url": tweet.url,
+            "source": tweet.source,
+            "retweet_count": tweet.retweet_count,
+            "reply_count": tweet.reply_count,
+            "like_count": tweet.like_count,
+            "quote_count": tweet.quote_count,
+            "view_count": tweet.view_count,
+            "lang": tweet.lang,
+            "bookmark_count": tweet.bookmark_count,
+            "is_reply": tweet.is_reply,
+            "in_reply_to_id": tweet.in_reply_to_id,
+            "conversation_id": tweet.conversation_id,
+            "in_reply_to_user_id": tweet.in_reply_to_user_id,
+            "in_reply_to_username": tweet.in_reply_to_username,
+            "entities": tweet.entities,
+            "quoted_tweet": tweet.quoted_tweet,
+            "retweeted_tweet": tweet.retweeted_tweet,
+            "is_limited_reply": tweet.is_limited_reply,
+        }
+
+    def publish_tweet(self, tweet: Tweet) -> str | None:
+        """Publish a tweet to Pub/Sub.
+
+        Args:
+            tweet: Tweet data to publish
+
+        Returns:
+            Message ID if successful, None otherwise
+        """
+        try:
+            topic_name = self._get_tweet_topic_name(tweet.username)
+            topic_path = self.publisher.topic_path(self.project_id, topic_name)
+
+            message_data = self._tweet_to_message(tweet)
+            message_json = json.dumps(message_data)
+
+            future = self.publisher.publish(
+                topic_path,
+                message_json.encode("utf-8"),
+                ordering_key=tweet.username.lower(),
+            )
+
+            message_id = future.result()
+            logger.info(
+                f"📤 Published tweet to {topic_name}: @{tweet.username} "
+                f"({tweet.tweet_id}) (message_id: {message_id})"
+            )
+            return message_id
+
+        except Exception as e:
+            logger.error(f"Failed to publish tweet from @{tweet.username}: {e}", exc_info=True)
+            return None
+
+    def publish_tweets(self, tweets_by_user: dict[str, list[Tweet]]) -> dict[str, int]:
+        """Publish multiple tweets grouped by user.
+
+        Args:
+            tweets_by_user: Dictionary mapping username to list of tweets
+
+        Returns:
+            Dictionary mapping username to count of published tweets
+        """
+        results = {}
+        for username, tweets in tweets_by_user.items():
+            published = 0
+            for tweet in tweets:
+                message_id = self.publish_tweet(tweet)
+                if message_id:
+                    published += 1
+            results[username] = published
         return results
