@@ -39,7 +39,7 @@ run:
 		exit 1; \
 	fi
 	@echo "🚀 Starting real-time ingestion service..."
-	@.venv/bin/python -m src.main
+	@uv run --no-sync src.main
 
 test:
 	@bash -c ' \
@@ -52,7 +52,7 @@ test:
 		exit 1; \
 	fi; \
 	echo "🧪 Running tests..."; \
-	.venv/bin/python -m pytest tests/ -v \
+	uv run --no-sync pytest tests/ -v \
 	'
 
 test-cov:
@@ -61,36 +61,20 @@ test-cov:
 		echo "❌ Virtual environment not found. Run make install first."; \
 		exit 1; \
 	fi; \
-	.venv/bin/python -m pytest tests/ --cov=src --cov-report=term-missing --cov-report=html --cov-fail-under=60 \
+	uv run --no-sync pytest tests/ --cov=src --cov-report=term-missing --cov-report=html --cov-fail-under=60 \
 	'
 
 lint:
-	@if [ ! -d ".venv" ]; then \
-		echo "❌ Virtual environment not found. Run 'make install' first."; \
-		exit 1; \
-	fi; \
-	.venv/bin/python -m ruff check .
+	uv run --no-sync ruff check .
 
 lint-fix:
-	@if [ ! -d ".venv" ]; then \
-		echo "❌ Virtual environment not found. Run 'make install' first."; \
-		exit 1; \
-	fi; \
-	.venv/bin/python -m ruff check . --fix
+	uv run --no-sync ruff check . --fix
 
 format:
-	@if [ ! -d ".venv" ]; then \
-		echo "❌ Virtual environment not found. Run 'make install' first."; \
-		exit 1; \
-	fi; \
-	.venv/bin/python -m ruff format .
+	uv run --no-sync ruff format .
 
 format-check:
-	@if [ ! -d ".venv" ]; then \
-		echo "❌ Virtual environment not found. Run 'make install' first."; \
-		exit 1; \
-	fi; \
-	.venv/bin/python -m ruff format --check .
+	uv run --no-sync ruff format --check .
 
 check: lint format-check test-cov
 	@echo "✅ All checks passed!"

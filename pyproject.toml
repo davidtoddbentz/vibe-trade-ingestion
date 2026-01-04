@@ -29,9 +29,12 @@ classifiers = [
 ]
 
 # Artifact Registry index configuration for vibe-trade-shared
-# Note: uv doesn't natively support OAuth token auth for private indexes
-# So we install vibe-trade-shared separately with pip, then uv sync handles the rest
-# In Docker/Cloud Run, service account credentials work automatically
+# uv uses keyring authentication via keyrings.google-artifactregistry-auth
+# Ensure you have: pip install keyrings.google-artifactregistry-auth
+# And: gcloud auth application-default login
+[tool.uv]
+keyring-provider = "subprocess"
+
 [[tool.uv.index]]
 name = "gcp-artifact-registry"
 url = "https://us-central1-python.pkg.dev/vibe-trade-475704/vibe-trade-python/simple/"

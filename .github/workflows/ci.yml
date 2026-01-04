@@ -40,10 +40,10 @@ jobs:
         UV_PYTHON: 3.11
     
     - name: Lint with ruff
-      run: .venv/bin/python -m ruff check .
+      run: uv run --no-sync ruff check .
     
     - name: Format check with ruff
-      run: .venv/bin/python -m ruff format --check .
+      run: uv run --no-sync ruff format --check .
 
   test:
     runs-on: ubuntu-latest
@@ -92,7 +92,7 @@ jobs:
         FIRESTORE_DATABASE: "(default)"
       run: |
         if [ -d tests ] && [ -n "$(find tests -name 'test_*.py' 2>/dev/null)" ]; then
-          .venv/bin/python -m pytest tests/ --cov=src --cov-report=term-missing --cov-report=xml --cov-fail-under=60 -v
+          uv run --no-sync pytest tests/ --cov=src --cov-report=term-missing --cov-report=xml --cov-fail-under=60 -v
         else
           echo "⚠️  No tests found. Skipping tests."
         fi
