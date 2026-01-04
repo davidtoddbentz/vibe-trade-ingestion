@@ -9,7 +9,7 @@ install:
 	sed -i.bak2 's/, "vibe-trade-shared>=0.1.1"//' pyproject.toml && \
 	sed -i.bak2 's/"vibe-trade-shared"//' pyproject.toml && \
 	sed -i.bak2 '/\[\[tool.uv.index\]\]/,/explicit = true/d' pyproject.toml && \
-	uv sync --all-groups && \
+	uv sync --all-groups --python 3.11 && \
 	mv pyproject.toml.bak pyproject.toml && \
 	rm -f pyproject.toml.bak2 || \
 	(mv pyproject.toml.bak pyproject.toml; rm -f pyproject.toml.bak2; exit 1)
