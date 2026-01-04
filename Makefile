@@ -34,30 +34,61 @@ locally: install lint-fix format
 # Uses .env file (loaded by Python's load_dotenv in main.py)
 # Environment variables must be set in .env file or as shell environment variables
 run:
-	@echo "🚀 Starting real-time Coinbase SPOT ingestion service..."
-	@uv run python -m src.main
+	@if [ ! -d ".venv" ]; then \
+		echo "❌ Virtual environment not found. Run 'make install' first."; \
+		exit 1; \
+	fi; \
+	@echo "🚀 Starting real-time ingestion service..."
+	@.venv/bin/python -m src.main
 
 test:
-	@if [ -d tests ] && [ -n "$$(find tests -name 'test_*.py' 2>/dev/null)" ]; then \
-		uv run python -m pytest tests/ -v; \
-	else \
-		echo "⚠️  No tests found. Skipping tests."; \
-	fi
+	@bash -c '\
+	if [ ! -d "tests" ] || [ -z "$$(find tests -name \"test_*.py\" 2>/dev/null | head -1)" ]; then \
+		echo "⚠️  No tests found. Skipping."; \
+		exit 0; \
+	fi; \
+	if [ ! -d ".venv" ]; then \
+		echo "❌ Virtual environment not found. Run 'make install' first."; \
+		exit 1; \
+	fi; \
+	echo "🧪 Running tests..."; \
+	.venv/bin/python -m pytest tests/ -v'
 
 test-cov:
-	uv run python -m pytest tests/ --cov=src --cov-report=term-missing --cov-report=html --cov-fail-under=60
+	@bash -c '\
+	if [ ! -d ".venv" ]; then \
+		echo "❌ Virtual environment not found. Run 'make install' first."; \
+		exit 1; \
+	fi; \
+	.venv/bin/python -m pytest tests/ --cov=src --cov-report=term-missing --cov-report=html --cov-fail-under=60'
 
 lint:
-	uv run ruff check .
+	@if [ ! -d ".venv" ]; then \
+		echo "❌ Virtual environment not found. Run 'make install' first."; \
+		exit 1; \
+	fi; \
+	.venv/bin/python -m ruff check .
 
 lint-fix:
-	uv run ruff check . --fix
+	@if [ ! -d ".venv" ]; then \
+		echo "❌ Virtual environment not found. Run 'make install' first."; \
+		exit 1; \
+	fi; \
+	.venv/bin/python -m ruff check . --fix
 
 format:
-	uv run ruff format .
+	@if [ ! -d ".venv" ]; then \
+		echo "❌ Virtual environment not found. Run 'make install' first."; \
+		exit 1; \
+	fi; \
+	.venv/bin/python -m ruff format .
 
 format-check:
-	uv run ruff format --check .
+	@if [ ! -d ".venv" ]; then \
+		echo "❌ Virtual environment not found. Run 'make install' first."; \
+		exit 1; \
+	fi; \
+	.venv/bin/python -m ruff format --check .
 
 check: lint format-check test-cov
 	@echo "✅ All checks passed!"
