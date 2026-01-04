@@ -9,7 +9,7 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "coinbase-advanced-py>=1.8.2",
     "google-cloud-pubsub>=2.18.0",
-    "vibe-trade-shared>=0.1.1",
+    "vibe-trade-shared @ git+https://github.com/davidtoddbentz/vibe-trade-shared.git@main",
     "requests>=2.31.0",
     "python-dateutil>=2.8.0",
 ]
@@ -27,14 +27,6 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
 ]
-
-# Artifact Registry index configuration for vibe-trade-shared
-# Note: vibe-trade-shared is installed separately via make install
-# All commands use `uv run --no-sync` to avoid dependency resolution
-# [[tool.uv.index]]
-# name = "gcp-artifact-registry"
-# url = "https://us-central1-python.pkg.dev/vibe-trade-475704/vibe-trade-python/simple/"
-# explicit = true
 
 [build-system]
 requires = ["setuptools>=61.0"]

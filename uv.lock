@@ -910,7 +910,7 @@ requires-dist = [
     { name = "python-dateutil", specifier = ">=2.8.0" },
     { name = "python-dotenv", specifier = ">=1.0.0" },
     { name = "requests", specifier = ">=2.31.0" },
-    { name = "vibe-trade-shared", specifier = ">=0.1.1" },
+    { name = "vibe-trade-shared", git = "https://github.com/davidtoddbentz/vibe-trade-shared.git?rev=main" },
 ]
 
 [package.metadata.requires-dev]
@@ -923,15 +923,11 @@ dev = [
 [[package]]
 name = "vibe-trade-shared"
 version = "0.1.1"
-source = { registry = "https://us-central1-python.pkg.dev/vibe-trade-475704/vibe-trade-python/simple/" }
+source = { git = "https://github.com/davidtoddbentz/vibe-trade-shared.git?rev=main#f1c9be7d1b072c1644d80e013ff744f93886fddd" }
 dependencies = [
     { name = "google-cloud-firestore" },
     { name = "pydantic" },
     { name = "python-dotenv" },
-]
-sdist = { url = "https://us-central1-python.pkg.dev/vibe-trade-475704/vibe-trade-python/vibe-trade-shared/vibe_trade_shared-0.1.1.tar.gz", hash = "sha256:859bcfedda07704aaf713917210c5cff0199b2f1495c58009c10f4e90efdb288" }
-wheels = [
-    { url = "https://us-central1-python.pkg.dev/vibe-trade-475704/vibe-trade-python/vibe-trade-shared/vibe_trade_shared-0.1.1-py3-none-any.whl", hash = "sha256:d4006809c15896372f76bc572d979018d40f8ded5a368fad5d8255b5a7e6f0cb" },
 ]
 
 [[package]]
