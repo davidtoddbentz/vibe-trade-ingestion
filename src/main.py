@@ -247,7 +247,9 @@ def main():
                         logger.info("🐦 Fetching Twitter tweets...")
                         tweets_by_user = twitter_ingestor.fetch_all_users()
                         total_tweets = sum(len(tweets) for tweets in tweets_by_user.values())
-                        logger.info(f"✅ Fetched {total_tweets} tweets from {len(tweets_by_user)} users")
+                        logger.info(
+                            f"✅ Fetched {total_tweets} tweets from {len(tweets_by_user)} users"
+                        )
 
                         # Publish to Pub/Sub
                         if pubsub_publisher:

@@ -31,4 +31,3 @@ class Tweet:
     quoted_tweet: dict | None = None
     retweeted_tweet: dict | None = None
     is_limited_reply: bool = False
-

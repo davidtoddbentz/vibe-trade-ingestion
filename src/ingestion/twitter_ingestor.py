@@ -70,10 +70,7 @@ class TwitterIngestor:
             # Update last fetch time
             self.last_fetch_times[username] = datetime.now(timezone.utc)
 
-            logger.info(
-                f"✅ Fetched {len(tweets)} new tweets for @{username} "
-                f"(since {since_time})"
-            )
+            logger.info(f"✅ Fetched {len(tweets)} new tweets for @{username} (since {since_time})")
 
             return tweets
 
@@ -101,4 +98,3 @@ class TwitterIngestor:
                 results[username] = tweets
 
         return results
-

@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 class TwitterAPIError(Exception):
     """Base exception for Twitter API errors."""
+
     pass
 
 
@@ -196,4 +197,3 @@ class TwitterAPIAdapter:
                 break
 
         return tweets
-
