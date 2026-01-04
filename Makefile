@@ -3,7 +3,28 @@
 
 install:
 	@echo "📦 Installing dependencies..."
-	uv sync --all-groups
+	@echo "   Step 1: Installing other dependencies (excluding vibe-trade-shared)..."
+	@cp pyproject.toml pyproject.toml.bak && \
+	sed -i.bak2 's/"vibe-trade-shared>=0.1.1",//' pyproject.toml && \
+	sed -i.bak2 's/, "vibe-trade-shared>=0.1.1"//' pyproject.toml && \
+	sed -i.bak2 's/"vibe-trade-shared"//' pyproject.toml && \
+	sed -i.bak2 '/\[\[tool.uv.index\]\]/,/explicit = true/d' pyproject.toml && \
+	uv sync --all-groups && \
+	mv pyproject.toml.bak pyproject.toml && \
+	rm -f pyproject.toml.bak2 || \
+	(mv pyproject.toml.bak pyproject.toml; rm -f pyproject.toml.bak2; exit 1)
+	@echo "   Step 2: Installing vibe-trade-shared from Artifact Registry..."
+	@if [ -z "$$ARTIFACT_REGISTRY_ACCESS_TOKEN" ] && [ -f .env ]; then \
+		export $$(grep -v '^#' .env | grep '^ARTIFACT_REGISTRY_ACCESS_TOKEN=' | xargs) 2>/dev/null || true; \
+	fi; \
+	if [ -z "$$ARTIFACT_REGISTRY_ACCESS_TOKEN" ]; then \
+		ARTIFACT_REGISTRY_ACCESS_TOKEN=$$(gcloud auth print-access-token 2>/dev/null) || (echo "❌ Failed to get access token. Run: gcloud auth login"; exit 1); \
+	fi; \
+	uv pip install --python .venv/bin/python \
+		--index-url "https://oauth2accesstoken:$$ARTIFACT_REGISTRY_ACCESS_TOKEN@us-central1-python.pkg.dev/vibe-trade-475704/vibe-trade-python/simple/" \
+		--extra-index-url https://pypi.org/simple/ \
+		"vibe-trade-shared>=0.1.1" || (echo "❌ Failed to install vibe-trade-shared"; exit 1)
+	@echo "✅ All dependencies installed successfully!"
 
 # Setup for local development: install deps, fix linting, and format code
 locally: install lint-fix format
@@ -58,7 +79,15 @@ IMAGE_TAG := $(ARTIFACT_REGISTRY_URL)/vibe-trade-ingestion:latest
 docker-build:
 	@echo "🏗️  Building Docker image..."
 	@echo "   Image: $(IMAGE_TAG)"
-	docker build --platform linux/amd64 -t $(IMAGE_TAG) .
+	@echo "   vibe-trade-shared will be installed from Artifact Registry in Docker"
+	@echo "   Getting GCP access token for build..."
+	@bash -c '\
+		ACCESS_TOKEN=$$(gcloud auth print-access-token 2>/dev/null) || (echo "❌ Failed to get access token. Run: gcloud auth login"; exit 1); \
+		cd .. && DOCKER_BUILDKIT=1 docker build --platform linux/amd64 \
+			--build-arg ARTIFACT_REGISTRY_ACCESS_TOKEN="$$ACCESS_TOKEN" \
+			-f vibe-trade-ingestion/Dockerfile \
+			-t $(IMAGE_TAG) \
+			.'
 	@echo "✅ Build complete"
 
 docker-push:

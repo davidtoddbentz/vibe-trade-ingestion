@@ -9,6 +9,9 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "coinbase-advanced-py>=1.8.2",
     "google-cloud-pubsub>=2.18.0",
+    "vibe-trade-shared>=0.1.1",
+    "requests>=2.31.0",
+    "python-dateutil>=2.8.0",
 ]
 
 authors = [
@@ -24,6 +27,15 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
 ]
+
+# Artifact Registry index configuration for vibe-trade-shared
+# Note: uv doesn't natively support OAuth token auth for private indexes
+# So we install vibe-trade-shared separately with pip, then uv sync handles the rest
+# In Docker/Cloud Run, service account credentials work automatically
+[[tool.uv.index]]
+name = "gcp-artifact-registry"
+url = "https://us-central1-python.pkg.dev/vibe-trade-475704/vibe-trade-python/simple/"
+explicit = true
 
 [build-system]
 requires = ["setuptools>=61.0"]

@@ -14,3 +14,4 @@ class Candle:
     low: float
     close: float
     volume: float
+
