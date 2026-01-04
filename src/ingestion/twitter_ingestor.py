@@ -1,8 +1,7 @@
 """Twitter tweet ingestion service."""
 
 import logging
-from datetime import datetime, timezone, timedelta
-from typing import Dict, List
+from datetime import datetime, timedelta, timezone
 
 from ..models.tweet import Tweet
 from ..sources.twitter import TwitterAPIAdapter
@@ -34,9 +33,9 @@ class TwitterIngestor:
         self.adapter = twitter_adapter
         self.repository = user_repository
         # Track last fetch time per user to avoid duplicates
-        self.last_fetch_times: Dict[str, datetime] = {}
+        self.last_fetch_times: dict[str, datetime] = {}
 
-    def fetch_new_tweets_for_user(self, user_data: dict) -> List[Tweet]:
+    def fetch_new_tweets_for_user(self, user_data: dict) -> list[Tweet]:
         """Fetch new tweets for a user since last fetch.
 
         Args:
@@ -82,7 +81,7 @@ class TwitterIngestor:
             logger.error(f"Error fetching tweets for @{username}: {e}", exc_info=True)
             return []
 
-    def fetch_all_users(self) -> Dict[str, List[Tweet]]:
+    def fetch_all_users(self) -> dict[str, list[Tweet]]:
         """Fetch new tweets for all monitored users.
 
         Returns:

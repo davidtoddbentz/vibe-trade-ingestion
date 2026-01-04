@@ -2,7 +2,6 @@
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
 
 
 @dataclass
@@ -14,22 +13,22 @@ class Tweet:
     username: str
     text: str
     timestamp: datetime
-    url: Optional[str] = None
-    source: Optional[str] = None
+    url: str | None = None
+    source: str | None = None
     retweet_count: int = 0
     reply_count: int = 0
     like_count: int = 0
     quote_count: int = 0
     view_count: int = 0
-    lang: Optional[str] = None
+    lang: str | None = None
     bookmark_count: int = 0
     is_reply: bool = False
-    in_reply_to_id: Optional[str] = None
-    conversation_id: Optional[str] = None
-    in_reply_to_user_id: Optional[str] = None
-    in_reply_to_username: Optional[str] = None
-    entities: Optional[dict] = None  # hashtags, urls, user_mentions
-    quoted_tweet: Optional[dict] = None
-    retweeted_tweet: Optional[dict] = None
+    in_reply_to_id: str | None = None
+    conversation_id: str | None = None
+    in_reply_to_user_id: str | None = None
+    in_reply_to_username: str | None = None
+    entities: dict | None = None  # hashtags, urls, user_mentions
+    quoted_tweet: dict | None = None
+    retweeted_tweet: dict | None = None
     is_limited_reply: bool = False
 

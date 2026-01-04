@@ -1,9 +1,9 @@
 """Twitter/X API adapter for fetching user tweets."""
 
 import logging
-import requests
 from datetime import datetime, timezone
-from typing import List, Optional
+
+import requests
 from dateutil import parser
 
 from ..models.tweet import Tweet
@@ -38,8 +38,8 @@ class TwitterAPIAdapter:
 
     def get_user_last_tweets(
         self,
-        username: Optional[str] = None,
-        user_id: Optional[str] = None,
+        username: str | None = None,
+        user_id: str | None = None,
         cursor: str = "",
         include_replies: bool = False,
     ) -> dict:
@@ -79,7 +79,7 @@ class TwitterAPIAdapter:
             logger.error(f"Twitter API request failed: {e}")
             raise TwitterAPIError(f"Failed to fetch tweets: {e}") from e
 
-    def parse_tweet(self, tweet_data: dict) -> Optional[Tweet]:
+    def parse_tweet(self, tweet_data: dict) -> Tweet | None:
         """Parse API tweet response into Tweet model.
 
         Args:
@@ -94,7 +94,7 @@ class TwitterAPIAdapter:
             if created_at:
                 try:
                     timestamp = parser.isoparse(created_at)
-                except:
+                except (ValueError, TypeError):
                     timestamp = parser.parse(created_at)
             else:
                 timestamp = datetime.now(timezone.utc)
@@ -139,11 +139,11 @@ class TwitterAPIAdapter:
 
     def get_new_tweets_since(
         self,
-        username: Optional[str] = None,
-        user_id: Optional[str] = None,
-        since_timestamp: Optional[datetime] = None,
+        username: str | None = None,
+        user_id: str | None = None,
+        since_timestamp: datetime | None = None,
         include_replies: bool = False,
-    ) -> List[Tweet]:
+    ) -> list[Tweet]:
         """Get new tweets since a timestamp.
 
         Args:
